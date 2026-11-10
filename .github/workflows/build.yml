@@ -58,19 +58,24 @@ jobs:
       - name: Validate signing config
         if: github.event_name != 'pull_request'
         run: |
-          if [ "${{ secrets.KEYSTORE }}" = "" ]; then
+          if [ -z "${{ secrets.KEYSTORE }}" ]; then
             echo "::error::Signing secrets not configured. KEYSTORE secret is required for release builds."
             exit 1
           fi
 
       - name: Create signing.properties
         if: github.event_name != 'pull_request'
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo KEYSTORE_FILE=../keystore.jks > signing.properties
-          echo KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }} >> signing.properties
-          echo KEY_ALIAS=${{ secrets.KEY_ALIAS }} >> signing.properties
-          echo KEY_PASSWORD=${{ secrets.KEY_PASSWORD }} >> signing.properties
-          echo ${{ secrets.KEYSTORE }} | base64 --decode > keystore.jks
+          echo "KEYSTORE_FILE=../keystore.jks" > signing.properties
+          echo "KEYSTORE_PASSWORD=$KEYSTORE_PASS" >> signing.properties
+          echo "KEY_ALIAS=$KEY_ALIAS" >> signing.properties
+          echo "KEY_PASSWORD=$KEY_PASS" >> signing.properties
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > keystore.jks
 
       - name: Download DF LKMs
         uses: actions/download-artifact@v7
