@@ -27,7 +27,7 @@ jobs:
       image: ghcr.io/ylarod/ddk-min:${{ matrix.kmi }}-20260828
       options: --privileged
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: Build dfroot.ko
         run: |
@@ -44,7 +44,7 @@ jobs:
           make clean
 
       - name: Upload dfroot.ko
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: df-lkm-${{ matrix.kmi }}
           path: out/dfroot-${{ matrix.kmi }}.ko
@@ -53,7 +53,7 @@ jobs:
     needs: build-lkms
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: Validate signing config
         if: github.event_name != 'pull_request'
@@ -78,21 +78,22 @@ jobs:
           printf '%s' "$KEYSTORE_B64" | base64 --decode > keystore.jks
 
       - name: Download DF LKMs
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
           pattern: df-lkm-*
           merge-multiple: true
           path: app/src/main/jni/ko/
 
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v3
 
       - name: Build DFRoot APK
         run: |
+          chmod +x ./gradlew
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             ./gradlew :app:assembleDebug
           else
@@ -100,7 +101,7 @@ jobs:
           fi
 
       - name: Upload DFRoot APK
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: DFRoot
           path: |
@@ -109,6 +110,6 @@ jobs:
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: app/build/outputs/apk/release/DFRoot_*.apk
